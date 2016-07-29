@@ -12,13 +12,12 @@ export default (store) => ({
       const Counter = require('./containers/GridContainer').default
       const reducer = require('./modules/grid').default
 
-      /*  Add the reducer to the store on key 'counter'  */
-      injectReducer(store, { key: 'counter', reducer })
+      injectReducer(store, { key: 'grid', reducer })
 
       /*  Return getComponent   */
       cb(null, Counter)
 
     /* Webpack named bundle   */
-    }, 'counter')
+    }, 'grid')
   }
 })
