@@ -9,13 +9,13 @@ export default (store) => ({
     require.ensure([], (require) => {
       /*  Webpack - use require callback to define
           dependencies for bundling   */
-      const Counter = require('./containers/GridContainer').default
+      const Grid = require('./containers/GridContainer').default
       const reducer = require('./modules/grid').default
 
       injectReducer(store, { key: 'grid', reducer })
 
       /*  Return getComponent   */
-      cb(null, Counter)
+      cb(null, Grid)
 
     /* Webpack named bundle   */
     }, 'grid')
