@@ -78,7 +78,7 @@ class Grid extends React.Component {
         const coords = dot.get()
         const dataX = (coords[0] - margin) / margin
         const dataY = this.props.size - (coords[1] - margin) / margin
-        console.log({x: dataX, y: dataY})
+        this.props.updateCoords({dataX: dataX, dataY: dataY})
         select('#handle')
           .attr('transform', `translate(${dot.get()})`)
       })
@@ -92,6 +92,10 @@ class Grid extends React.Component {
       <div className='row'>
         <div className='col-sm-3'>
           <Marker xCoord={5} yCoord={6} />
+          <div className="well">
+            {props.message}
+          </div>
+          <button onClick={props.checkCoords}>Check</button>
         </div>
         <div className={`col-sm-9 ${classes.grid}`}>
           <svg width={props.width + props.margin * 2} height={props.height + props.margin * 2}>
@@ -123,7 +127,8 @@ Grid.propTypes = {
   width: React.PropTypes.number.isRequired,
   height: React.PropTypes.number.isRequired,
   size: React.PropTypes.number.isRequired,
-  margin: React.PropTypes.number
+  margin: React.PropTypes.number,
+  updateCoords: React.PropTypes.func.isRequired
 }
 
 export default Grid
