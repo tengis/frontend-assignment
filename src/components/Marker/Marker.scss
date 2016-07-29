@@ -1,0 +1,22 @@
+.marker {
+  border-bottom: solid 1px rgba(0,0,0,0.1);
+  display: inline-block;
+  width: 100%;
+  line-height: 50px;
+}
+
+.marker:first-child {
+  margin-top: 50px;
+}
+
+.position span {
+  background-color: rgba(0,0,0,0.1);
+  padding: 2px;
+  display: inline-block;
+  line-height: 14px;
+  margin-right: 2px;
+}
+
+.position {
+  float: left;
+}
