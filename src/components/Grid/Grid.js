@@ -2,7 +2,7 @@ import React from 'react'
 import XYAxis from '../XYAxis'
 import Marker from '../Marker'
 import Circle from '../Circle'
-import { max, scaleLinear, range, drag, event, select } from 'd3'
+import { max, scaleLinear, range, drag, event, select, selectAll } from 'd3'
 import classes from './Grid.scss'
 
 const xMax = (data) => max(data, (d) => d.x)
@@ -34,7 +34,6 @@ class Grid extends React.Component {
         set: (v) => { obj[prop] = v }
       }
     }
-    // const obj = {pos: [200, 50]}
     const cartesian = (x, y) => {
       return {
         get: () => { return [x.get(), y.get()] },
@@ -71,53 +70,74 @@ class Grid extends React.Component {
     let dot = cartesian(
       add(multiply(rounded(clamped(ref(obj, 'x'), 0, this.props.width), margin), margin), margin),
       add(multiply(rounded(clamped(ref(obj, 'y'), 0, this.props.width), margin), margin), margin))
-
+    // console.log(dot.get())
+    const props = this.props
     const draggable = drag()  // capture mouse drag event
-      .on('drag', () => {
+      .on('drag', function (d) {
+        if (event.defaultPrevented) return
         dot.set([event.x, event.y])
         const coords = dot.get()
-        const dataX = (coords[0] - margin) / margin
-        const dataY = this.props.size - (coords[1] - margin) / margin
-        this.props.updateCoords({dataX: dataX, dataY: dataY})
-        select('#handle')
-          .attr('transform', `translate(${dot.get()})`)
+        // const dataX = (coords[0] - margin) / margin
+        const dataX = (coords[0] - margin * 4) / margin
+        const dataY = props.size - (coords[1] - margin * 4) / margin - 3
+        props.updateCoords({dataX: dataX, dataY: dataY})
+        if (dataX <= props.size && dataX >= 0 &&
+          dataY >= 0 && dataY <= props.size) {
+          select(this)
+            .attr('transform', `translate(${coords[0]}, ${coords[1] - 50})`)
+        }
+
+        // .attr('transform', `translate(${coords[0] + 26}, ${coords[1] - 48})`)
       })
-    select('#handle').call(draggable)
+    selectAll('.draggable').call(draggable)
   }
   render () {
     const props = this.props
     const data = range(props.size + 1).map((n) => ({x: n, y: n}))
     const d3Props = mainProps({...props, data})
+    const markerPath = 'M0 0c-9.8 0-17.7 7.8-17.7 17.4 0 15.5 17.7 30.6 17.7' +
+                       ' 30.6s17.7-15.4 17.7-30.6c0-9.6-7.9-17.4-17.7-17.4z'
     return (
-      <div className='row'>
-        <div className='col-sm-3'>
-          <Marker xCoord={5} yCoord={6} />
-          <div className="well">
-            {props.message}
-          </div>
-          <button onClick={props.checkCoords}>Check</button>
-        </div>
-        <div className={`col-sm-9 ${classes.grid}`}>
-          <svg width={props.width + props.margin * 2} height={props.height + props.margin * 2}>
-            <g className="xy-axis" transform={`translate(${props.margin}, ${props.margin})`}>
-              <XYAxis height={props.height} {...d3Props} />
-              {range(props.size + 1).map((num) => {
-                let cy = 500 - 50 * num
-                return data.map((obj, key) => {
-                  return <Circle cx={obj.x * props.margin}
-                    cy={cy}
-                    r={5}
-                    key={key}
-                  />
-                })
-              })}
-            </g>
-            <g id="handle" className="draggable" transform="translate(200,50)">
-              <circle className="shadow" r="10"></circle>
-              <circle className="circle" r="10" fill="hsl(0,50%,50%)"></circle>
-            </g>
-          </svg>
-        </div>
+      <div>
+        <svg width={props.width + props.margin * 6} height={props.height + props.margin * 6}>
+          <g className="xy-axis" transform={`translate(${props.margin * 4}, ${props.margin})`}>
+            <XYAxis height={props.height} {...d3Props} />
+            {range(props.size + 1).map((num) => {
+              let cy = 500 - 50 * num
+              return data.map((obj, key) => {
+                return <Circle cx={obj.x * props.margin}
+                  cy={cy}
+                  r={5}
+                  key={key}
+                />
+              })
+            })}
+          </g>
+          <text x="30" y="45" fill="hsla(204, 70%, 53%, 1)">
+            1. x: 1 y: 3
+          </text>
+          <g className="draggable" transform="translate(125,0)">
+            <path fill="hsla(204, 70%, 53%, 1)" d={markerPath}></path>
+          </g>
+          <text x="30" y="105" fill="hsla(282, 44%, 47%, 1)">
+            2. x: 1 y: 3
+          </text>
+          <g className="draggable" transform="translate(125,60)">
+            <path fill="hsla(282, 44%, 47%, 1)" d={markerPath}></path>
+          </g>
+          <text x="30" y="165" fill="hsla(37, 90%, 51%, 1)">
+            3. x: 1 y: 3
+          </text>
+          <g className="draggable" transform="translate(125,120)">
+            <path fill="hsla(37, 90%, 51%, 1)" d={markerPath}></path>
+          </g>
+          <text x="30" y="225" fill="hsl(0,50%,50%)">
+            4. x: 1 y: 3
+          </text>
+          <g className="draggable" transform="translate(125,180)">
+            <path fill="hsl(0,50%,50%)" d={markerPath}></path>
+          </g>
+        </svg>
       </div>
     )
   }
