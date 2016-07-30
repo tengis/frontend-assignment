@@ -27,79 +27,13 @@ const mainProps = (props) => {
 }
 
 class Grid extends React.Component {
-  componentDidMount () {
-    const ref = (obj, prop) => {
-      return {
-        get: () => { return obj[prop] },
-        set: (v) => { obj[prop] = v }
-      }
-    }
-    const cartesian = (x, y) => {
-      return {
-        get: () => { return [x.get(), y.get()] },
-        set: (p) => { x.set(p[0]); y.set(p[1]) }
-      }
-    }
-    const clamped = (m, lo, hi) => {
-      return {
-        get: () => { return m.get() },
-        set: (v) => { m.set(Math.min(hi, Math.max(lo, v))) }
-      }
-    }
-
-    const add = (m, a) => {
-      return {
-        get: () => { return m.get() + a },
-        set: (v) => { m.set(v - a) }
-      }
-    }
-    const multiply = (m, k) => {
-      return {
-        get: () => { return m.get() * k },
-        set: (v) => { m.set(v / k) }
-      }
-    }
-    const rounded = (m) => {
-      return {
-        get: () => { return m.get() },
-        set: (v) => { m.set(Math.round(v)) }
-      }
-    }
-    const margin = this.props.margin
-    const obj = {x: margin, y: margin}
-    let dot = cartesian(
-      add(multiply(rounded(clamped(ref(obj, 'x'), 0, this.props.width), margin), margin), margin),
-      add(multiply(rounded(clamped(ref(obj, 'y'), 0, this.props.width), margin), margin), margin))
-    // console.log(dot.get())
-    const props = this.props
-    const draggable = drag()  // capture mouse drag event
-      .on('drag', function (d) {
-        if (event.defaultPrevented) return
-        dot.set([event.x, event.y])
-        const coords = dot.get()
-        // const dataX = (coords[0] - margin) / margin
-        const dataX = (coords[0] - margin * 4) / margin
-        const dataY = props.size - (coords[1] - margin * 4) / margin - 3
-        props.updateCoords({dataX: dataX, dataY: dataY})
-        if (dataX <= props.size && dataX >= 0 &&
-          dataY >= 0 && dataY <= props.size) {
-          select(this)
-            .attr('transform', `translate(${coords[0]}, ${coords[1] - 50})`)
-        }
-
-        // .attr('transform', `translate(${coords[0] + 26}, ${coords[1] - 48})`)
-      })
-    selectAll('.draggable').call(draggable)
-  }
   render () {
     const props = this.props
     const data = range(props.size + 1).map((n) => ({x: n, y: n}))
     const d3Props = mainProps({...props, data})
-    const markerPath = 'M0 0c-9.8 0-17.7 7.8-17.7 17.4 0 15.5 17.7 30.6 17.7' +
-                       ' 30.6s17.7-15.4 17.7-30.6c0-9.6-7.9-17.4-17.7-17.4z'
     return (
       <div>
-        <svg width={props.width + props.margin * 6} height={props.height + props.margin * 6}>
+        <svg width={props.width + props.margin * 6} height={props.height + props.margin * 2}>
           <g className="xy-axis" transform={`translate(${props.margin * 4}, ${props.margin})`}>
             <XYAxis height={props.height} {...d3Props} />
             {range(props.size + 1).map((num) => {
@@ -113,31 +47,35 @@ class Grid extends React.Component {
               })
             })}
           </g>
-          <text x="30" y="45" fill="hsla(204, 70%, 53%, 1)">
-            1. x: 1 y: 3
-          </text>
-          <g className="draggable" transform="translate(125,0)">
-            <path fill="hsla(204, 70%, 53%, 1)" d={markerPath}></path>
-          </g>
-          <text x="30" y="105" fill="hsla(282, 44%, 47%, 1)">
-            2. x: 1 y: 3
-          </text>
-          <g className="draggable" transform="translate(125,60)">
-            <path fill="hsla(282, 44%, 47%, 1)" d={markerPath}></path>
-          </g>
-          <text x="30" y="165" fill="hsla(37, 90%, 51%, 1)">
-            3. x: 1 y: 3
-          </text>
-          <g className="draggable" transform="translate(125,120)">
-            <path fill="hsla(37, 90%, 51%, 1)" d={markerPath}></path>
-          </g>
-          <text x="30" y="225" fill="hsl(0,50%,50%)">
-            4. x: 1 y: 3
-          </text>
-          <g className="draggable" transform="translate(125,180)">
-            <path fill="hsl(0,50%,50%)" d={markerPath}></path>
-          </g>
+
+          {this.props.markers.map((marker, i) => (
+            <g key={`marker${i}`}>
+              <text x={marker.xText} y={marker.yText} fill={marker.fill}>
+                {`${i + 1}. x: ${marker.correctCoords[0]} y: ${marker.correctCoords[1]}`}
+              </text>
+              <Marker {...marker}
+                size={this.props.size}
+                margin={this.props.margin}
+                updateCoords={this.props.updateCoords}
+                draggedCoords={this.props.draggedCoords[marker.name]}
+              />
+            </g>
+          ))}
+
         </svg>
+        <div className="text-center">
+          {this.props.results.map((msg, i) => <p key={`msg${i}`}>{msg}</p>)}
+          <button className="btn btn-primary btn-lg"
+            onClick={this.props.checkCoords}>
+            Check
+          </button>
+          <button className="btn btn-default btn-lg"
+            onClick={this.props.reset}
+            style={{marginLeft: '10px'}}
+          >
+            Reset
+          </button>
+        </div>
       </div>
     )
   }
@@ -147,8 +85,13 @@ Grid.propTypes = {
   width: React.PropTypes.number.isRequired,
   height: React.PropTypes.number.isRequired,
   size: React.PropTypes.number.isRequired,
+  draggedCoords: React.PropTypes.object,
   margin: React.PropTypes.number,
-  updateCoords: React.PropTypes.func.isRequired
+  updateCoords: React.PropTypes.func.isRequired,
+  checkCoords: React.PropTypes.func.isRequired,
+  reset: React.PropTypes.func.isRequired,
+  markers: React.PropTypes.array.isRequired,
+  results: React.PropTypes.array
 }
 
 export default Grid

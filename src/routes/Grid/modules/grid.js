@@ -1,16 +1,18 @@
+import { isEqual } from 'lodash/fp'
 // ------------------------------------
 // Constants
 // ------------------------------------
-export const UPDATE_COORDS = 'UPDATE_COORDS'
+export const SET_DRAGGED_COORDS = 'SET_DRAGGED_COORDS'
 export const CHECK_COORDS = 'CHECK_COORDS'
+export const RESET = 'RESET'
 
 // ------------------------------------
 // Actions
 // ------------------------------------
-export function updateCoords (coords) {
+export function setDraggedCoords (coordsObj) {
   return {
-    type: UPDATE_COORDS,
-    payload: coords
+    type: SET_DRAGGED_COORDS,
+    payload: coordsObj
   }
 }
 
@@ -20,8 +22,14 @@ export function checkCoords () {
   }
 }
 
+export function reset () {
+  return {
+    type: RESET
+  }
+}
+
 export const actions = {
-  updateCoords,
+  setDraggedCoords,
   checkCoords
 }
 
@@ -29,22 +37,37 @@ export const actions = {
 // Action Handlers
 // ------------------------------------
 const ACTION_HANDLERS = {
-  [UPDATE_COORDS]: (state, action) => {
+  [RESET]: (state, action) => {
     return {
       ...state,
-      dataX: action.payload.dataX,
-      dataY: action.payload.dataY
+      draggedCoords: {},
+      results: []
+    }
+  },
+  [SET_DRAGGED_COORDS]: (state, action) => {
+    return {
+      ...state,
+      draggedCoords: {
+        ...state.draggedCoords,
+        ...action.payload
+      }
     }
   },
   [CHECK_COORDS]: (state, action) => {
-    let message = 'Wrong coordinates. Please choose corrent coordinates'
-    if (state.dataX === state.checkX &&
-      state.dataY === state.checkY) {
-      message = 'Yeah!. That is correct'
-    }
+    let results = []
+    state.markers.forEach(marker => {
+      const draggedCoords = state.draggedCoords
+      let draggedCoord
+      if (draggedCoords.hasOwnProperty(marker.name)) {
+        draggedCoord = state.draggedCoords[marker.name]
+      }
+      if (!isEqual(draggedCoord, marker.correctCoords)) {
+        results.push(`${marker.name} - wrong coordinate`)
+      }
+    })
     return {
       ...state,
-      message: message
+      results
     }
   }
 }
@@ -53,9 +76,50 @@ const ACTION_HANDLERS = {
 // Reducer
 // ------------------------------------
 const initialState = {
-  checkX: 5,
-  checkY: 6,
-  message: 'drag the red dot'
+  results: [],
+  width: 500,
+  height: 500,
+  margin: 50,
+  size: 10,
+  draggedCoords: {},
+  markers: [
+    {
+      name: 'blue',
+      fill: 'hsla(204, 70%, 53%, 1)',
+      xCoord: 125,
+      yCoord: 0,
+      xText: 30,
+      yText: 45,
+      correctCoords: [3, 6]
+    },
+    {
+      name: 'purple',
+      fill: 'hsla(282, 44%, 47%, 1)',
+      xCoord: 125,
+      yCoord: 60,
+      xText: 30,
+      yText: 105,
+      correctCoords: [2, 7]
+    },
+    {
+      name: 'orange',
+      fill: 'hsla(37, 90%, 51%, 1)',
+      xCoord: 125,
+      yCoord: 120,
+      xText: 30,
+      yText: 165,
+      correctCoords: [5, 3]
+    },
+    {
+      name: 'red',
+      fill: 'hsl(0,50%,50%)',
+      xCoord: 125,
+      yCoord: 180,
+      xText: 30,
+      yText: 225,
+      correctCoords: [7, 9]
+    }
+  ]
 }
 export default function counterReducer (state = initialState, action) {
   const handler = ACTION_HANDLERS[action.type]
